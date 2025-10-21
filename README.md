@@ -32,10 +32,3 @@ If you need to reproduce the lab, see `commands.txt` for the steps and follow th
 1. Follow `Phase_1/commands.txt` to generate a Root CA, Intermediate CA, server and client certs.
 2. Redact any passphrases — never store them in plain text.
 3. Use the provided public certs and screenshots to validate results without exposing private keys.
-
-## License
-Choose a license (e.g., MIT) or keep repository private for grading.
-
----
-
-If you want, I can open a PR template, an ISSUE template, or create a short `CONTRIBUTING.md` if this repo will be used for collaboration.
