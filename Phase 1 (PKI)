@@ -1,0 +1,33 @@
+Objective
+The goal of Phase 1 was to set up a complete PKI (Public Key
+Infrastructure) hierarchy with a root CA, intermediate CA, and server
+certificates to establish a trusted TLS environment.
+
+1. Root Certificate Authority (CA) Creation
+I created a Root Certificate Authority (CA) on my Kali VM using OpenSSL.
+A 4096-bit RSA key was chosen for the Root CA because it provides strong
+security and is a widely accepted standard for long-term trust anchors.
+
+2. Intermediate CA and Certificate Issuance
+An Intermediate CA was generated and signed by the Root CA to form a
+trust chain. The Intermediate CA was then used to issue certificates for end
+entities, including:
+• One server certificate (used to secure server communications)
+
+3. SSH Keypair Generation and Host Configuration
+Two SSH keypairs were generated on Kali:
+• RSA 4096-bit key — chosen for compatibility with systems that
+require RSA keys and to ensure strong encryption.
+• Ed25519 key — chosen for its modern design, smaller key size, faster
+operations, and strong security guarantees.
+The host system was configured to accept one of the keys (RSA) for secure
+remote logins. This demonstrates practical application of asymmetric
+cryptography in system access control.
+• Public SSH key (id_rsa.pub).
+
+4. Key Generation Documentation
+All OpenSSL and ssh-keygen commands used in the creation of the Root
+CA, Intermediate CA, certificates, and SSH keypairs were documented. The
+choice of key types and sizes was justified to balance security strength with
+performance and compatibility.
+
