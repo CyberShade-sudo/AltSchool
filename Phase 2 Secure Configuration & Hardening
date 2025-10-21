@@ -1,0 +1,25 @@
+Objective
+This phase focused on strengthening practical skills in secure remote access, web server configuration, and cryptographic operations. The following tasks were carried out on Kali Linux and Windows host systems.
+
+1. Configure a TLS-enabled Web Service
+I successfully configured a TLS-enabled web service on the host using the already-created server certificate and private key. The service was verified to present the server’s certificate chain during the TLS handshake.
+
+2. Configure Mutual TLS (mTLS)
+I configured the service to require client certificates for access to a protected resource. The mutual TLS handshake was tested successfully, confirming that only clients presenting valid certificates could access the /secure resource.
+
+3. SSH Hardening
+On the host, I installed and configured the OpenSSH server to improve security. The following hardening measures were attempted:
+•	Disabled password authentication.
+•	Disabled root login.
+•	Restricted authentication to public key only.
+
+On Kali, I generated an SSH key pair and attempted to connect to the host using public key authentication. 
+The host correctly rejected password-based logins. However, the key-based login attempts were unsuccessful due to permission issues with the .ssh/authorized_keys setup on Windows.
+Although full key-based login was not achieved, the service is no longer accepting weak password logins, which is a significant improvement in hardening.
+ 
+4. GPG Keypair Creation and Usage
+I generated a GPG keypair on Kali and used it to sign and encrypt a short text file. The file was then decrypted, and the signature successfully verified, confirming both confidentiality and authenticity.
+ 
+Challenges
+The primary challenge faced in this phase was with the SSH hardening task. While disabling password authentication worked as intended, setting up public key authentication on the Windows host was hindered by permission issues in handling the authorized_keys file. This will be revisited in a future iteration for full implementation.
+
