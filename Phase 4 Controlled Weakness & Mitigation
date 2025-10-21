@@ -1,0 +1,32 @@
+Objective
+Intentionally create a controlled, reversible weakness in the environment (weak passphrase on an encrypted private key), demonstrate the vulnerability in a safe manner, and implement a mitigation. Provide before/after evidence and a short write-up explaining the risk and remediation.
+
+What I did (summary)
+1.	I created a copy of the server private key and intentionally encrypted that copy with a weak passphrase (weakpass123). 
+This created a controlled test artefact which I kept in /root/pki/weak_test to avoid touching the original private key.
+
+2.	I demonstrated the vulnerability by performing a small, offline dictionary attack against the weakly encrypted PEM. John did not accept the pem2john output on my system (no password hashes loaded), so I used a safe fallback: I iterated a short wordlist with openssl to attempt decryption. 
+The weak passphrase was recovered quickly (FOUND password: weakpass123).
+
+3.	I mitigated the weakness by generating a strong random passphrase and re-encrypting the private key using AES-256 with that strong passphrase. 
+I then verified the mitigation by running the same small-wordlist test against the newly-protected key — none of the weak passwords succeeded 
+
+Notes on tools & methods
+•	I first attempted to use the pem2john.py → john workflow (the approved method for cracking encrypted PEMs). 
+The pem2john output was generated, but the local john build returned “No password hashes loaded”. This is a commonly observed compatibility issue when the installed john binary does not support the $PEM$ format produced by the local pem2john.py. 
+Rather than debugging or rebuilding John, I used an equivalent, deterministic fallback: OpenSSL was used to attempt decryption with each password from a short wordlist. 
+This demonstrates the same real-world risk — a weak passphrase can be recovered offline. The fallback is fully valid for demonstration because it replicates the core attack (offline trial decryptions).
+
+•	The mitigation used a 32-byte base64 random passphrase and AES-256 to re-encrypt the private key. This raises the effort to brute-force the passphrase to a practical impossibility for small wordlists.
+
+Risk & Mitigation 
+Risk: An encrypted private key protected by a weak passphrase can be recovered offline by an attacker who obtains the key file. 
+If the private key is recovered, the attacker could impersonate the server, sign malicious artefacts, or decrypt captured traffic (for sessions not protected by forward secrecy). 
+This risk is particularly acute when keys are stored with weak or reused passphrases.
+Mitigation: I re-encrypted the private key with AES-256 using a strong, randomly generated passphrase and protected the passphrase file with strict filesystem permissions (owner-only). 
+For production systems, stronger mitigations are recommended: use hardware-backed key storage (HSM/KMS), avoid passphrase-protected keys for automated servers unless passphrases are managed by secure secret managers, and immediately remove any intentionally weak artifacts after evidence collection.
+
+
+
+
+
