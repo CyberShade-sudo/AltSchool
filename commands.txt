@@ -1,0 +1,90 @@
+# AltSchool Practical — commands.txt
+# Redacted: do NOT include private keys or passphrases in this file.
+# Replace placeholders like <HOST_IP>, <WINDOWS_USER>, <YOUR_EMAIL> as needed.
+
+
+##############################
+# Phase 1 — PKI & Key Management
+##############################
+openssl genrsa -out rootCA.key 4096
+openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 3650 -out rootCA.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=AltSchool/CN=RootCA"
+
+openssl genrsa -out intermediateCA.key 4096
+openssl req -new -key intermediateCA.key -out intermediateCA.csr -subj "/C=NG/ST=Lagos/L=Lagos/O=AltSchool/CN=IntermediateCA"
+openssl x509 -req -in intermediateCA.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out intermediateCA.pem -days 1825 -sha256
+
+openssl genrsa -out server.key 2048
+openssl req -new -key server.key -out server.csr -subj "/C=NG/ST=Lagos/L=Lagos/O=AltSchool/CN=localhost"
+openssl x509 -req -in server.csr -CA intermediateCA.pem -CAkey intermediateCA.key -CAcreateserial -out server.crt -days 825 -sha256
+
+openssl genrsa -out client.key 2048
+openssl req -new -key client.key -out client.csr -subj "/C=NG/ST=Lagos/L=Lagos/O=AltSchool/CN=client"
+openssl x509 -req -in client.csr -CA intermediateCA.pem -CAkey intermediateCA.key -CAcreateserial -out client.crt -days 825 -sha256
+
+cat server.crt intermediateCA.pem > server-chain.pem
+openssl verify -CAfile rootCA.pem -untrusted intermediateCA.pem server.crt
+
+##############################
+# SSH key generation (Phase 1)
+##############################
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" -C "student@altschool"
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N "" -C "student@altschool"
+
+##############################
+# Phase 2 — Secure Services & Hardening
+##############################
+openssl s_server -accept 4433 -cert /path/to/server.crt -key /path/to/server.key -WWW
+curl -vk https://127.0.0.1:4433/
+openssl s_client -connect 127.0.0.1:4433 -cert /path/to/client.crt -key /path/to/client.key -CAfile /path/to/rootCA.pem
+
+sudo sed -n '1,240p' /etc/ssh/sshd_config | egrep -i 'PasswordAuthentication|PermitRootLogin|PubkeyAuthentication|KexAlgorithms|Ciphers|HostKeyAlgorithms' || true
+sudo sshd -T | egrep -i 'passwordauthentication|permitrootlogin|kexalgorithms|ciphers|hostkeyalgorithms|pubkeyauthentication' || true
+
+##############################
+# Phase 3 — Traffic Capture & Analysis
+##############################
+sudo tcpdump -i lo host 127.0.0.1 and port 4433 -w ~/pki/capture_tls_lo.pcap
+sudo tcpdump -i any host <HOST_IP> -w ~/pki/capture_host.pcap
+tshark -r ~/pki/capture_tls_lo.pcap -q -z io,phs
+export SSLKEYLOGFILE=~/pki/sslkeys.log && firefox --new-instance
+
+##############################
+# Phase 4 — Controlled Weakness & Mitigation
+##############################
+openssl rsa -in server.key.orig -des3 -out server.key.encrypted.pem -passout pass:weakpass123
+python3 /usr/share/john/pem2john.py /root/pki/weak_test/server.key.encrypted.pem > /root/pki/weak_test/server_key_hash.txt
+
+# tiny-wordlist check (bash)
+for p in $(cat weaklist.txt); do
+  if openssl rsa -in server.key.encrypted.pem -passin pass:$p -noout >/dev/null 2>&1; then
+    echo "FOUND password: $p"
+    break
+  else
+    echo "Tried: $p ... nope"
+  fi
+done
+
+openssl rand -base64 32 > strong_pass.txt
+chmod 600 strong_pass.txt
+STRONGPASS=$(cat strong_pass.txt)
+openssl rsa -in server.key.orig -aes256 -out server.key.protected.pem -passout pass:$STRONGPASS
+
+for p in $(cat weaklist.txt); do
+  if openssl rsa -in server.key.protected.pem -passin pass:$p -noout >/dev/null 2>&1; then
+    echo "BAD - weak passphrase still works: $p"
+    break
+  else
+    echo "Tried: $p ... nope"
+  fi
+done
+
+##############################
+# GPG (if used)
+##############################
+gpg --full-generate-key
+gpg --list-keys
+echo "This is a secret message" > message.txt
+gpg --encrypt --sign --armor -r "Your Name <you@example.com>" message.txt
+gpg --decrypt message.txt.asc
+
+# End of commands.txt
