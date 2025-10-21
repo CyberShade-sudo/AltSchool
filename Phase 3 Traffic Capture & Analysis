@@ -1,0 +1,15 @@
+Objective: 
+Capture TLS traffic, demonstrate decryption with an approved method, identify cipher suite and forward secrecy.
+Tasks Completed
+1.	Captured TLS traffic between Kali and the Windows host using tcpdump. The capture was saved into a .pcap file for analysis in Wireshark.
+2.	Configured the client to generate a session key log file using the SSLKEYLOGFILE environment variable. This allowed Wireshark to successfully decrypt the TLS session.
+3.	Inspected the decrypted traffic in Wireshark and identified the negotiated cipher suite.
+
+Analysis
+•	The negotiated cipher suite was observed in the TLS handshake details (example: TLS_AES_128_GCM_SHA256).
+•	This cipher suite does provide forward secrecy, since it relies on ephemeral Diffie–Hellman (ECDHE) key exchange.
+•	Forward secrecy ensures that even if the server’s private key were later compromised, past TLS sessions could not be decrypted.
+ 
+Issues Faced and Resolution
+•	Initially, decryption did not work because the capture was opened without loading the session key log file.
+•	Once the SSLKEYLOGFILE variable was set on the client and imported into Wireshark, the decryption succeeded and the HTTP payload was visible.
